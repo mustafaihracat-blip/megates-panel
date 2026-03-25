@@ -4,7 +4,6 @@ from datetime import datetime
 
 def regional_scout():
     # Megates ürünlerine (Beton Köşk, Hücre, Pano) en uygun bölgesel hedefler
-    # Bu liste robotun Nijerya pazarında öncelikli taradığı kurumları temsil eder
     targets = [
         {"n": "Ikeja Electric (IE) HQ", "t": "DisCo", "c": "Lagos", "e": "procurement@ikejaelectric.com", "w": "ikejaelectric.com", "p": 5},
         {"n": "Agbara Industrial Park Power", "t": "Sanayi", "c": "Ogun", "e": "info@agbaraindustrial.com", "w": "agbara-estate.com", "p": 5},
@@ -16,26 +15,29 @@ def regional_scout():
     return targets
 
 def update_agent_data():
-    # Mevcut bölgesel hedefleri al
     leads = regional_scout()
     
-    # Dünya Bankası ihalelerini (Nijerya Enerji Sektörü) çek
+    # Dünya Bankası ihalelerini çek
     wb_url = "https://search.worldbank.org/api/v2/projects?format=json&fl=id,project_name,totalamt,status&countrycode_exact=NG&sectortype_exact=Energy"
     try:
-        wb_res = requests.get(wb_url, timeout=10).json()
-        if 'projects' in wb_res:
-            for p_id in list(wb_res['projects'].keys())[:5]:
-                proj = wb_res['projects'][p_id]
-                leads.append({
-                    "n": "YENİ İHALE: " + proj['project_name'],
-                    "t": "Kamu/WB", 
-                    "c": "Abuja", 
-                    "e": "projects@worldbank.org", 
-                    "w": f"projects.worldbank.org/{p_id}", 
-                    "p": 5
-                })
+        response = requests.get(wb_url, timeout=15)
+        if response.status_code == 200:
+            wb_res = response.json()
+            if 'projects' in wb_res:
+                # En güncel 5 projeyi al
+                project_keys = list(wb_res['projects'].keys())[:5]
+                for p_id in project_keys:
+                    proj = wb_res['projects'][p_id]
+                    leads.append({
+                        "n": "YENİ İHALE: " + proj.get('project_name', 'Bilinmeyen Proje'),
+                        "t": "Kamu/WB", 
+                        "c": "Abuja", 
+                        "e": "projects@worldbank.org", 
+                        "w": f"projects.worldbank.org/{p_id}", 
+                        "p": 5
+                    })
     except Exception as e:
-        print(f"Hata oluştu: {e}")
+        print(f"Hata: {e}")
 
     # Verileri hazırla
     data = {
@@ -43,7 +45,7 @@ def update_agent_data():
         "projects": leads
     }
     
-    # data.json dosyasını güncelle
+    # data.json dosyasını yaz
     with open('data.json', 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
     
