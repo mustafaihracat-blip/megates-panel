@@ -11,7 +11,7 @@ jobs:
   run-robot:
     runs-on: ubuntu-latest
     steps:
-      - name: Kodlari indir
+      - name: Kodları indir
         uses: actions/checkout@v4
 
       - name: Python Kur
@@ -19,14 +19,14 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Kutupaneleri Yukle
+      - name: Kütüphaneleri Yükle
         run: pip install requests
 
-      - name: Robotu Calistir
+      - name: Robotu Çalıştır
         run: python agent.py
 
-      - name: Verileri Kaydet
+      - name: Verileri Kaydet ve Hatayı Kaldır
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Robot: Guncel Veriler Eklendi"
+          commit_message: "Robot: Liste Güncellendi"
           file_pattern: 'data.json'
