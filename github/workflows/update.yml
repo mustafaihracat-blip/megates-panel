@@ -1,0 +1,32 @@
+name: Market Data Robot
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Her gece 00:00'da çalışır
+  workflow_dispatch: # İstediğin zaman elle çalıştırma butonu ekler
+
+jobs:
+  run-robot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kodları indir
+        uses: actions/checkout@v3
+
+      - name: Python Kur
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Gerekli kütüphaneyi yükle
+        run: pip install requests
+
+      - name: Robotu Çalıştır
+        run: python agent.py
+
+      - name: Güncellenen veriyi kaydet
+        run: |
+          git config --global user.name 'Market-Robot'
+          git config --global user.email 'robot@github.com'
+          git add data.json
+          git commit -m "Robot verileri güncelledi" || exit 0
+          git push
