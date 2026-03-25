@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Megates Enerji — Nijerya Pazar Paneli</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Segoe UI',sans-serif; background:#0f1923; color:#e0e0e0; }
+.sidebar { position:fixed; left:0; top:0; width:220px; height:100vh; background:#0a1016; border-right:1px solid #1e3a5f; display:flex; flex-direction:column; z-index:100; }
+.logo { padding:24px 20px 20px; border-bottom:1px solid #1e3a5f; }
+.logo h2 { color:#f0b429; font-size:17px; font-weight:700; }
+.logo p { color:#7a9bb5; font-size:11px; margin-top:4px; }
+.nav { padding:16px 0; flex:1; }
+.nav a { display:flex; align-items:center; gap:10px; padding:11px 20px; color:#8ab0cc; font-size:13px; text-decoration:none; cursor:pointer; border-left:3px solid transparent; transition:.2s; }
+.nav a:hover, .nav a.active { color:#fff; background:#1a2d40; border-left-color:#f0b429; }
+.sidebar-footer { padding:16px 20px; border-top:1px solid #1e3a5f; }
+.sidebar-footer p { color:#4a6d8c; font-size:11px; }
+.main { margin-left:220px; min-height:100vh; }
+.topbar { background:#0a1016; border-bottom:1px solid #1e3a5f; padding:16px 32px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:90; }
+.topbar h1 { font-size:18px; color:#fff; font-weight:600; }
+.badge { background:#1a3a5c; color:#7ec8e3; font-size:11px; padding:4px 12px; border-radius:20px; border:1px solid #2a5a8c; }
+.page { display:none; padding:32px; }
+.page.active { display:block; }
+.stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:20px; margin-bottom:28px; }
+.stat-card { background:#0a1a2a; border:1px solid #1e3a5f; border-radius:12px; padding:20px 22px; position:relative; overflow:hidden; }
+.stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+.stat-card.red::before { background:#e74c3c; }
+.stat-card.blue::before { background:#2980b9; }
+.stat-card.green::before { background:#27ae60; }
+.stat-card.gold::before { background:#f0b429; }
+.stat-card .lbl { font-size:11px; color:#7a9bb5; text-transform:uppercase; letter-spacing:.8px; }
+.stat-card .val { font-size:28px; font-weight:700; margin:6px 0 3px; color:#fff; }
+.stat-card .sub { font-size:11px; color:#4a8a6c; }
+.stat-card .src { font-size:10px; color:#2a4a6c; margin-top:3px; }
+.stat-card .ico { position:absolute; right:18px; top:50%; transform:translateY(-50%); font-size:32px; opacity:.12; }
+.charts-row { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:28px; }
+.chart-card { background:#0a1a2a; border:1px solid #1e3a5f; border-radius:12px; padding:22px; }
+.chart-card h3 { font-size:13px; color:#aac8e0; margin-bottom:4px; font-weight:600; }
+.chart-card .src { font-size:10px; color:#2a5a8c; margin-bottom:14px; }
+.chart-wrap { position:relative; height:210px; }
+.sec { font-size:12px; color:#7a9bb5; text-transform:uppercase; letter-spacing:.8px; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+.sec::after { content:''; flex:1; height:1px; background:#1e3a5f; }
+.tcard { background:#0a1a2a; border:1px solid #1e3a5f; border-radius:12px; padding:22px; margin-bottom:24px; }
+.tcard h3 { font-size:13px; color:#aac8e0; margin-bottom:4px; font-weight:600; }
+.tcard .src { font-size:10px; color:#2a5a8c; margin-bottom:14px; }
+table { width:100%; border-collapse:collapse; }
+th { text-align:left; font-size:11px; color:#4a7a9c; text-transform:uppercase; letter-spacing:.5px; padding:9px 12px; border-bottom:1px solid #1e3a5f; }
+td { padding:10px 12px; font-size:12.5px; color:#c0d8ec; border-bottom:1px solid #111e2a; vertical-align:middle; }
+tr:hover td { background:#0d2035; }
+.bp { display:inline-block; padding:2px 9px; border-radius:20px; font-size:11px; font-weight:600; }
+.bp-red { background:#2d0d0d; color:#e74c3c; border:1px solid #5a1a1a; }
+.bp-blue { background:#0d1e2d; color:#2980b9; border:1px solid #1a3a5c; }
+.bp-green { background:#0d2d1a; color:#27ae60; border:1px solid #1a5c2a; }
+.bp-gold { background:#2d1e00; color:#f0b429; border:1px solid #5c3a00; }
+.bp-purple { background:#1a0d2d; color:#9b59b6; border:1px solid #3a1a5c; }
+.bp-teal { background:#0d2a2a; color:#1abc9c; border:1px solid #0d5a5a; }
+.star { color:#f0b429; letter-spacing:-1px; font-size:13px; }
+.irow { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; margin-bottom:28px; }
+.icard { background:#0a1a2a; border:1px solid #1e3a5f; border-radius:12px; padding:18px; }
+.icard h3 { font-size:13px; color:#f0b429; margin-bottom:10px; font-weight:600; }
+.ii { display:flex; gap:8px; margin-bottom:8px; align-items:flex-start; }
+.dot { width:7px; height:7px; border-radius:50%; background:#2980b9; margin-top:5px; flex-shrink:0; }
+.ii p { font-size:12px; color:#aac8e0; line-height:1.5; }
+.lnk { color:#2980b9; text-decoration:none; font-size:12px; }
+.lnk:hover { text-decoration:underline; }
+.tc { background:#0a1a2a; border:1px solid #1e3a5f; border-radius:10px; padding:14px 18px; margin-bottom:10px; }
+.tt { font-size:13px; color:#e0e0e0; font-weight:600; margin-bottom:7px; }
+.tm { display:flex; gap:12px; flex-wrap:wrap; }
+.tm span { font-size:11px; color:#7a9bb5; }
+.tm span b { color:#aac8e0; }
+.twocol { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:28px; }
+select { background:#0a1a2a; border:1px solid #1e3a5f; color:#aac8e0; padding:8px 12px; border-radius:8px; font-size:13px; cursor:pointer; }
+select:focus { outline:none; border-color:#f0b429; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="logo">
+    <h2>MEGATES ENERJİ</h2>
+    <p>Nijerya Pazar Paneli</p>
+  </div>
+  <nav class="nav">
+    <a class="active" onclick="showPage('overview',this)"><span>📊</span> Genel Bakış</a>
+    <a onclick="showPage('trade',this)"><span>📦</span> Ticaret Verileri</a>
+    <a onclick="showPage('projects',this)"><span>🏗️</span> Aktif Projeler</a>
+    <a onclick="showPage('tenders',this)"><span>📋</span> İhale Takibi</a>
+    <a onclick="showPage('disco',this)"><span>⚡</span> DisCo Rehberi</a>
+    <a onclick="showPage('leads',this)"><span>🎯</span> Lead Listesi</a>
+  </nav>
+  <div class="sidebar-footer">
+    <!-- DEĞİŞİKLİK BURADA: id="update-date" ekledik -->
+    <p id="update-date">Güncelleme: Mart 2025</p>
+    <p style="margin-top:4px;">Kaynak: WB · UN Comtrade · NERC</p>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <h1 id="ptitle">Genel Bakış — Nijerya Pazar İstihbarat Paneli</h1>
+    <span class="badge">🇳🇬 Nijerya · Mart 2025</span>
+  </div>
+
+  <!-- SAYFA 1 — GENEL BAKIŞ -->
+  <div class="page active" id="page-overview">
+    <div class="stat-grid">
+      <div class="stat-card red">
+        <div class="lbl">HS 8504 İthalat (2023)</div>
+        <div class="val">$391M</div>
+        <div class="sub">Elektrik ekipmanı içinde %12.5</div>
+        <div class="src">📌 UN Comtrade / TrendEconomy 2023</div>
+        <div class="ico">📦</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="lbl">WB Aktif Enerji Fonu</div>
+        <div class="val">$1.24B</div>
+        <div class="sub">NETAP $486M + DARES $750M</div>
+        <div class="src">📌 World Bank Projects 2023–24</div>
+        <div class="ico">💰</div>
+      </div>
+      <div class="stat-card green">
+        <div class="lbl">TCN Aktif Projesi</div>
+        <div class="val">135</div>
+        <div class="sub">İletim hattı & substation</div>
+        <div class="src">📌 TCN / Guardian Nigeria 2024</div>
+        <div class="ico">🔌</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="lbl">HS 8537 Pano İthalatı</div>
+        <div class="val">$162M</div>
+        <div class="sub">Switchgear & kontrol panoları</div>
+        <div class="src">📌 UN Comtrade 2023</div>
+        <div class="ico">🏗️</div>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>HS Koduna Göre Nijerya Elektrik Ekipmanı İthalatı (2023)</h3>
+        <div class="src">📌 Kaynak: UN Comtrade / TrendEconomy.com — 2023 gerçek verisi ($3.1B toplam HS85)</div>
+        <div class="chart-wrap"><canvas id="cImport"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Güç Trafosu — Ülke Payları (Nigeria, 2024)</h3>
+        <div class="src">📌 Kaynak: Volza Global Trade Data — "Electrical Power Transformer" Nigeria, Sep 2023–Aug 2024</div>
+        <div class="chart-wrap"><canvas id="cCountry"></canvas></div>
+      </div>
+    </div>
+
+    <div class="sec">Pazar Özeti</div>
+    <div class="irow">
+      <div class="icard">
+        <h3>🇳🇬 Nijerya Rakamları</h3>
+        <div class="ii"><div class="dot"></div><p>HS 8504 trafo ithalatı: <b>$391M</b> (2023)</p></div>
+        <div class="ii"><div class="dot"></div><p>HS 8537 pano ithalatı: <b>$162M</b> (2023)</p></div>
+        <div class="ii"><div class="dot"></div><p>Güç trafosu şipman büyümesi: <b>%292</b> (2024)</p></div>
+        <div class="ii"><div class="dot"></div><p>Elektriğe erişim oranı: <b>%55</b> — 85M kişi erişimsiz</p></div>
+        <div class="ii"><div class="dot"></div><p>2030 hükümet hedefi: <b>%75 erişim</b></p></div>
+      </div>
+      <div class="icard">
+        <h3>💡 Türkiye Fırsatı</h3>
+        <div class="ii"><div class="dot" style="background:#27ae60"></div><p>Türkiye güç trafosunda <b>%12 paya</b> sahip — 3. sırada</p></div>
+        <div class="ii"><div class="dot" style="background:#27ae60"></div><p>Nigeria'ya güç trafosu ithalatı <b>%292 büyüdü</b></p></div>
+        <div class="ii"><div class="dot" style="background:#27ae60"></div><p>WB projelerinde Çin'e <b>kalite avantajı</b> var</p></div>
+        <div class="ii"><div class="dot" style="background:#27ae60"></div><p>Avrupa kalitesi + rekabetçi fiyat = <b>fırsat penceresi</b></p></div>
+        <div class="ii"><div class="dot" style="background:#27ae60"></div><p>Sadece 4-5 tedarikçi var — <b>yoğunlaşmamış pazar</b></p></div>
+      </div>
+      <div class="icard">
+        <h3>⚡ WB Aktif Projeler</h3>
+        <div class="ii"><div class="dot" style="background:#e74c3c"></div><p><b>NETAP:</b> $486M — TCN substation rehabilitasyonu</p></div>
+        <div class="ii"><div class="dot" style="background:#e74c3c"></div><p><b>DARES:</b> $750M — 17.5M kişiye enerji erişimi</p></div>
+        <div class="ii"><div class="dot" style="background:#f0b429"></div><p><b>CBN:</b> $250M — 30+ substation, 34 trafo değişimi</p></div>
+        <div class="ii"><div class="dot" style="background:#f0b429"></div><p><b>North Core:</b> $570M — Batı Afrika iletim hattı</p></div>
+        <div class="ii"><div class="dot" style="background:#27ae60"></div><p>JICA + AfDB + AFD ek fonları da aktif</p></div>
+      </div>
+    </div>
+
+    <div class="sec">En Öncelikli 10 Hedef</div>
+    <div class="tcard">
+      <div class="src">📌 Kaynak: TCN açıklamaları, World Bank proje belgeleri, NERC lisans listesi</div>
+      <table>
+        <thead><tr><th>#</th><th>Kurum / Firma</th><th>Tür</th><th>Bütçe</th><th>Fon</th><th>Öncelik</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Transmission Company of Nigeria (TCN)</td><td><span class="bp bp-red">İletim</span></td><td>$1.74B+</td><td>WB / AfDB / AFD / JICA / CBN</td><td class="star">★★★★★</td></tr>
+          <tr><td>2</td><td>Niger Delta Power Holding (NDPHC)</td><td><span class="bp bp-red">Kamu Enerji</span></td><td>$2B+</td><td>NIPP / Federal Bütçe</td><td class="star">★★★★★</td></tr>
+          <tr><td>3</td><td>Rural Electrification Agency (REA)</td><td><span class="bp bp-green">Kırsal Enerji</span></td><td>$750M</td><td>World Bank DARES</td><td class="star">★★★★★</td></tr>
+          <tr><td>4</td><td>Ikeja Electric (IE)</td><td><span class="bp bp-blue">DisCo</span></td><td>—</td><td>Özel / IFC</td><td class="star">★★★★★</td></tr>
+          <tr><td>5</td><td>AEDC (Abuja Electricity)</td><td><span class="bp bp-blue">DisCo</span></td><td>—</td><td>Özel / WB destek</td><td class="star">★★★★★</td></tr>
+          <tr><td>6</td><td>IBEDC (İbadan Electricity)</td><td><span class="bp bp-blue">DisCo</span></td><td>—</td><td>Özel</td><td class="star">★★★★★</td></tr>
+          <tr><td>7</td><td>Elektrint Nigeria Ltd</td><td><span class="bp bp-purple">EPC</span></td><td>—</td><td>Proje bazlı</td><td class="star">★★★★★</td></tr>
+          <tr><td>8</td><td>ETCO Nigeria Ltd</td><td><span class="bp bp-purple">EPC</span></td><td>—</td><td>Proje bazlı</td><td class="star">★★★★</td></tr>
+          <tr><td>9</td><td>Dangote Group</td><td><span class="bp bp-gold">Sanayi</span></td><td>—</td><td>Özel</td><td class="star">★★★★</td></tr>
+          <tr><td>10</td><td>Julius Berger Nigeria</td><td><span class="bp bp-purple">EPC</span></td><td>—</td><td>Proje bazlı</td><td class="star">★★★★</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SAYFA 2 — TİCARET VERİLERİ -->
+  <div class="page" id="page-trade">
+    <div class="stat-grid">
+      <div class="stat-card red">
+        <div class="lbl">HS 8504 Transformatör</div><div class="val">$391M</div>
+        <div class="sub">HS85 toplam içinde %12.5</div><div class="src">📌 UN Comtrade 2023</div><div class="ico">⚡</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="lbl">HS 8537 Pano/Panel</div><div class="val">$162M</div>
+        <div class="sub">Switchgear & kontrol panoları</div><div class="src">📌 UN Comtrade 2023</div><div class="ico">🔲</div>
+      </div>
+      <div class="stat-card green">
+        <div class="lbl">Güç Trafosu Büyüme</div><div class="val">+292%</div>
+        <div class="sub">Sep 2023 – Aug 2024 yıllık</div><div class="src">📌 Volza Trade Data 2024</div><div class="ico">📈</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="lbl">Türkiye Payı</div><div class="val">%12</div>
+        <div class="sub">3. büyük ihracatçı (güç trafosu)</div><div class="src">📌 Volza Trade Data 2024</div><div class="ico">🇹🇷</div>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>Nijerya Güç Trafosu Şipman Büyümesi (Nigeria)</h3>
+        <div class="src">📌 Kaynak: Volza Global Trade Data — Nigeria güç trafosu import shipment sayısı</div>
+        <div class="chart-wrap"><canvas id="cGrowth"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>HS Kodu Bazında Büyüme Karşılaştırması (%)</h3>
+        <div class="src">📌 Kaynak: Volza Trade Data + UN Comtrade — yıllık büyüme oranları</div>
+        <div class="chart-wrap"><canvas id="cGrowthBar"></canvas></div>
+      </div>
+    </div>
+
+    <div class="sec">Megates Ürünleri — HS Kodu & Gümrük Bilgisi</div>
+    <div class="tcard">
+      <div class="src">📌 Kaynak: Nijerya Gümrük Tarife Cetveli + UN Comtrade HS kodları</div>
+      <table>
+        <thead><tr><th>Megates Ürünü</th><th>HS Kodu</th><th>2023 İthalat</th><th>Gümrük</th><th>Başlıca Rakipler</th></tr></thead>
+        <tbody>
+          <tr><td>Monoblok Beton Köşk</td><td>8537.20</td><td>$162M (HS8537 tümü)</td><td>%5 + KDV %7.5</td><td>Çin, Hindistan, AB</td></tr>
+          <tr><td>Metal Muhafazalı Modüler Hücre</td><td>8537.10</td><td>$162M (HS8537 tümü)</td><td>%5 + KDV %7.5</td><td>Schneider, Siemens</td></tr>
+          <tr><td>SF6 Gazlı Kesici</td><td>8536.50 / 8537</td><td>$162M (HS8537 tümü)</td><td>%5 + KDV %7.5</td><td>ABB, Siemens, Çin</td></tr>
+          <tr><td>SF6 Gazlı Ayırıcı / Yük Ayırıcı</td><td>8536.50</td><td>—</td><td>%5 + KDV %7.5</td><td>Çin, AB</td></tr>
+          <tr><td>Alçak Gerilim Panoları</td><td>8537.10</td><td>$162M (HS8537 tümü)</td><td>%5 + KDV %7.5</td><td>Çin, Hindistan</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="irow">
+      <div class="icard">
+        <h3>📊 Rakip Analizi</h3>
+        <div class="ii"><div class="dot" style="background:#e74c3c"></div><p>Çin: <b>%51 pay</b> — ucuz ama kalite şikayetleri artıyor</p></div>
+        <div class="ii"><div class="dot" style="background:#e74c3c"></div><p>Almanya: <b>%12</b> — Siemens/ABB, çok pahalı</p></div>
+        <div class="ii"><div class="dot" style="background:#f0b429"></div><p>Türkiye: <b>%12</b> — büyüme trendi güçlü</p></div>
+        <div class="ii"><div class="dot" style="background:#27ae60"></div><p>WB projelerinde IEC standartı zorunlu → Çin dezavantaj</p></div>
+      </div>
+      <div class="icard">
+        <h3>💰 Fiyatlandırma Önerisi</h3>
+        <div class="ii"><div class="dot"></div><p>Schneider/Siemens'in <b>%60-70'i</b> hedeflenmeli</p></div>
+        <div class="ii"><div class="dot"></div><p>Çin'den <b>%15-20 premium</b> — kalite gerekçesiyle</p></div>
+        <div class="ii"><div class="dot"></div><p>Ödeme: LC (akreditif) veya %30 avans</p></div>
+        <div class="ii"><div class="dot"></div><p>CIF Lagos fiyatlaması — navlun dahil teklif</p></div>
+      </div>
+      <div class="icard">
+        <h3>🚢 Lojistik Bilgisi</h3>
+        <div class="ii"><div class="dot"></div><p>Ana liman: <b>Apapa Port, Lagos</b></p></div>
+        <div class="ii"><div class="dot"></div><p>İzmir/Mersin → Lagos: ~18-22 gün transit</p></div>
+        <div class="ii"><div class="dot"></div><p>Nijerya gümrük: SON (Standards Org.) belgesi gerekli</p></div>
+        <div class="ii"><div class="dot"></div><p>Form M belgesi: yerel banka üzerinden ithalatçı alır</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAYFA 3 — AKTİF PROJELER -->
+  <div class="page" id="page-projects">
+    <div class="stat-grid">
+      <div class="stat-card blue">
+        <div class="lbl">NETAP (World Bank)</div><div class="val">$486M</div>
+        <div class="sub">TCN iletim substation rehabilitasyonu</div><div class="src">📌 WB Proje No: P146330 — Aktif</div><div class="ico">🏗️</div>
+      </div>
+      <div class="stat-card green">
+        <div class="lbl">DARES (World Bank)</div><div class="val">$750M</div>
+        <div class="sub">17.5M kişiye enerji — Ara 2023 onaylandı</div><div class="src">📌 WB Proje No: P172788 — Aktif</div><div class="ico">☀️</div>
+      </div>
+      <div class="stat-card red">
+        <div class="lbl">North Core (WB+AfDB)</div><div class="val">$570M</div>
+        <div class="sub">913 km 330kV hat + 7 substation</div><div class="src">📌 WB + AfDB ortak — %38 tamamlandı</div><div class="ico">🔌</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="lbl">CBN Rehab Fonu</div><div class="val">$250M</div>
+        <div class="sub">30+ substation, 34 kritik trafo</div><div class="src">📌 CBN Nigeria — Aktif 2024</div><div class="ico">🏦</div>
+      </div>
+    </div>
+
+    <div class="sec">Proje Detayları</div>
+    <div class="tcard">
+      <div class="src">📌 Kaynak: World Bank Projects Portal, Guardian Nigeria, TCN resmi açıklamaları, allAfrica.com</div>
+      <table>
+        <thead><tr><th>Proje</th><th>Fon</th><th>Tutar</th><th>Kapsam</th><th>Megates İlgisi</th><th>Durum</th></tr></thead>
+        <tbody>
+          <tr><td>NETAP — Elektrik İletim</td><td>World Bank IDA</td><td>$486M</td><td>TCN substation rehab & genişleme</td><td><span class="bp bp-red">Yüksek</span></td><td><span class="bp bp-green">Aktif</span></td></tr>
+          <tr><td>DARES — Yenilenebilir Enerji</td><td>World Bank IDA</td><td>$750M</td><td>Off-grid solar, mini-grid, dağıtım ekipmanı</td><td><span class="bp bp-blue">Orta</span></td><td><span class="bp bp-green">Aktif</span></td></tr>
+          <tr><td>North Core İletim</td><td>WB + AfDB + AFD</td><td>$570M</td><td>913 km 330kV hat + 7 substation</td><td><span class="bp bp-red">Yüksek</span></td><td><span class="bp bp-gold">%38 tamam</span></td></tr>
+          <tr><td>NEGMERP — Grid Rehab</td><td>Çoklu donor</td><td>$1.7B</td><td>İletim hattı, substation, trafo</td><td><span class="bp bp-red">Yüksek</span></td><td><span class="bp bp-green">Aktif</span></td></tr>
+          <tr><td>CBN T-D Arayüz Rehab</td><td>Merkez Bankası NG</td><td>$250M</td><td>30+ substation, 34 kritik trafo değişimi</td><td><span class="bp bp-red">Yüksek</span></td><td><span class="bp bp-green">Aktif</span></td></tr>
+          <tr><td>Lagos/Ogun İletim</td><td>JICA (Japonya)</td><td>—</td><td>Lagos-Ogun 330kV hat</td><td><span class="bp bp-blue">Orta</span></td><td><span class="bp bp-gold">Danışman seçimi</span></td></tr>
+          <tr><td>AfDB 330kV & 132kV Substation</td><td>African Dev. Bank</td><td>—</td><td>Yeni substation inşaatı</td><td><span class="bp bp-red">Yüksek</span></td><td><span class="bp bp-gold">Sözleşme yakın</span></td></tr>
+          <tr><td>NIPP Substations (NDPHC)</td><td>Federal Bütçe</td><td>$2B+</td><td>Lafia 2x150MVA dahil çok sayıda substation</td><td><span class="bp bp-red">Yüksek</span></td><td><span class="bp bp-green">Devam ediyor</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="irow">
+      <div class="icard">
+        <h3>🏗️ TCN Son Alımları (Gerçek)</h3>
+        <div class="ii"><div class="dot" style="background:#e74c3c"></div><p>10 adet <b>60MVA 132/33kV</b> trafo (WB finansmanlı)</p></div>
+        <div class="ii"><div class="dot" style="background:#e74c3c"></div><p>5 adet <b>150MVA 330/132kV</b> trafo</p></div>
+        <div class="ii"><div class="dot" style="background:#e74c3c"></div><p>25 adet <b>topraklama trafosu</b></p></div>
+        <div class="ii"><div class="dot" style="background:#f0b429"></div><p>10 mobil trafo + 10 substation (Siemens PPI)</p></div>
+        <div class="ii"><div class="dot" style="background:#f0b429"></div><p><b>1.570 MVA</b> trafo kapasitesi upgradi (CBN)</p></div>
+      </div>
+      <div class="icard">
+        <h3>📋 İhaleye Giriş Yolu</h3>
+        <div class="ii"><div class="dot"></div><p>TCN: <a href="https://tcn.org.ng" class="lnk" target="_blank">tcn.org.ng</a> → Tenders bölümü</p></div>
+        <div class="ii"><div class="dot"></div><p>NDPHC: <a href="https://ndphc.gov.ng" class="lnk" target="_blank">ndphc.gov.ng</a></p></div>
+        <div class="ii"><div class="dot"></div><p>WB ihaleleri: <a href="https://projects.worldbank.org" class="lnk" target="_blank">projects.worldbank.org</a></p></div>
+        <div class="ii"><div class="dot"></div><p>REA: <a href="https://rea.gov.ng" class="lnk" target="_blank">rea.gov.ng</a></p></div>
+        <div class="ii"><div class="dot"></div><p>Gerekli: <b>IEC sertifikası, ISO 9001, banka ref.</b></p></div>
+      </div>
+      <div class="icard">
+        <h3>💡 Stratejik Not</h3>
+        <div class="ii"><div class="dot" style="background:#27ae60"></div><p>WB projelerinde ihale <b>uluslararası rekabete açık</b></p></div>
+        <div class="ii"><div class="dot" style="background:#27ae60"></div><p>EPC firmalar subtedarikçi olarak alım yapıyor</p></div>
+        <div class="ii"><div class="dot" style="background:#f0b429"></div><p>İhaleye doğrudan yerine <b>lokal ortakla</b> daha hızlı</p></div>
+        <div class="ii"><div class="dot" style="background:#f0b429"></div><p>Önerilen ortak: <b>Elektrint Nigeria</b></p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAYFA 4 — İHALE TAKİBİ -->
+  <div class="page" id="page-tenders">
+    <div class="sec">Aktif İhale Takip Kaynakları</div>
+    <div class="twocol">
+      <div class="tcard">
+        <h3>📡 İhale Takip Siteleri</h3>
+        <div class="src">📌 Günlük e-posta uyarısı alınabilecek kaynaklar</div>
+        <table>
+          <thead><tr><th>Site</th><th>İçerik</th><th>Erişim</th></tr></thead>
+          <tbody>
+            <tr><td><a href="https://www.tendersontime.com/nigeria-tenders/transformer-tenders/" class="lnk" target="_blank">tendersontime.com ↗</a></td><td>Nijerya transformer ihaleleri</td><td>Ücretli</td></tr>
+            <tr><td><a href="https://www.publicprocurement.ng" class="lnk" target="_blank">publicprocurement.ng ↗</a></td><td>Nijerya kamu ihaleleri</td><td>Ücretsiz</td></tr>
+            <tr><td><a href="https://www.nigeriatenders.com" class="lnk" target="_blank">nigeriatenders.com ↗</a></td><td>Özel + kamu tümü</td><td>Ücretsiz</td></tr>
+            <tr><td><a href="https://www.globaltenders.com/tenders-nigeria" class="lnk" target="_blank">globaltenders.com ↗</a></td><td>Enerji & elektrik</td><td>Ücretli</td></tr>
+            <tr><td><a href="https://tcn.org.ng" class="lnk" target="_blank">tcn.org.ng ↗</a></td><td>TCN resmi ihaleleri</td><td>Ücretsiz</td></tr>
+            <tr><td><a href="https://nerc.gov.ng/media-category/tenders" class="lnk" target="_blank">nerc.gov.ng ↗</a></td><td>NERC düzenleyici</td><td>Ücretsiz</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="tcard">
+        <h3>📬 DisCo Tedarikçi Portalları</h3>
+        <div class="src">📌 Tedarikçi listesine kayıt için resmi kanallar</div>
+        <table>
+          <thead><tr><th>DisCo</th><th>Portal</th><th>Not</th></tr></thead>
+          <tbody>
+            <tr><td>Ikeja Electric</td><td><a href="https://vms.ikejaelectric.com/accountCreation" class="lnk" target="_blank">VMS Portal ↗</a></td><td>DUNS no gerekli</td></tr>
+            <tr><td>AEDC Abuja</td><td><a href="https://abujaelectricity.com/supply-chain-management" class="lnk" target="_blank">SCM Portal ↗</a></td><td>3 aşamalı</td></tr>
+            <tr><td>EKEDC (Eko)</td><td>customerservice@ekedp.com</td><td>E-posta</td></tr>
+            <tr><td>IBEDC (İbadan)</td><td>procurement@ibedc.com</td><td>E-posta</td></tr>
+            <tr><td>BEDC (Benin)</td><td>info@bedcpower.com</td><td>E-posta</td></tr>
+            <tr><td>PHED (P.Harcourt)</td><td>info@phed.com.ng</td><td>E-posta</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="sec">Güncel İhale Örnekleri (2024–2025)</div>
+    <div class="tc"><div class="tt">TCN — Substation Ekipmanı ve Bakım Malzemeleri Tedariki</div><div class="tm"><span>🏛️ <b>Kurum:</b> Transmission Company of Nigeria</span><span>🔧 <b>Kapsam:</b> Substation ekipmanı, switchgear, bakım malzemeleri</span><span>📌 <b>Kaynak:</b> publicprocurement.ng</span></div></div>
+    <div class="tc"><div class="tt">NEMSA — 2025 Sermaye Projeleri Yüklenici İhalesi</div><div class="tm"><span>🏛️ <b>Kurum:</b> Nigerian Electricity Management Services Agency</span><span>📍 <b>Bölge:</b> Abuja</span><span>📌 <b>Kaynak:</b> globaltenders.com 2025</span></div></div>
+    <div class="tc"><div class="tt">NETAP / TCN — 132kV ve 330kV Substation Genişleme</div><div class="tm"><span>🏛️ <b>Kurum:</b> TCN / World Bank</span><span>💰 <b>Fon:</b> WB IDA $486M</span><span>🔧 <b>Kapsam:</b> Substation, trafo, switchgear tedarik & kurulum</span><span>📌 <b>Kaynak:</b> WB Projects P146330</span></div></div>
+    <div class="tc"><div class="tt">REA / DARES — Dağıtım Ekipmanı Tedariki</div><div class="tm"><span>🏛️ <b>Kurum:</b> Rural Electrification Agency</span><span>💰 <b>Fon:</b> WB IDA $750M</span><span>🔧 <b>Kapsam:</b> Dağıtım ekipmanı, trafo, panel</span><span>📌 <b>Kaynak:</b> WB Press Release Ara 2023</span></div></div>
+    <div class="tc"><div class="tt">CBN — 30+ Substation Rehabilitasyonu & 1.570 MVA Trafo Upgradi</div><div class="tm"><span>🏛️ <b>Kurum:</b> CBN / TCN</span><span>💰 <b>Fon:</b> CBN $250M</span><span>🔧 <b>Kapsam:</b> 34 kritik trafo değişimi, substation rehab</span><span>📌 <b>Kaynak:</b> Guardian Nigeria / Bakan açıklaması 2024</span></div></div>
+    <div class="tc"><div class="tt">AfDB — 330kV & 132kV Substation Yeni İnşaat</div><div class="tm"><span>🏛️ <b>Kurum:</b> TCN / African Development Bank</span><span>🔧 <b>Kapsam:</b> Yeni 330kV & 132kV substation inşaatı</span><span>📌 <b>Kaynak:</b> TCN MD Açıklaması 2024</span></div></div>
+  </div>
+
+  <!-- SAYFA 5 — DisCo REHBERİ -->
+  <div class="page" id="page-disco">
+    <div class="sec">12 DisCo — Tam İletişim & Tedarikçi Bilgisi</div>
+    <div class="tcard">
+      <div class="src">📌 Kaynak: NERC Lisans Listesi (nerc.gov.ng), DisCo resmi web siteleri — Mart 2025</div>
+      <table>
+        <thead><tr><th>DisCo</th><th>Bölge</th><th>Müşteri</th><th>E-posta</th><th>Tedarikçi Portalı</th></tr></thead>
+        <tbody>
+          <tr><td><b>Ikeja Electric (IE)</b></td><td>Lagos Kuzey</td><td>1.31M</td><td>info@ikejaelectric.com</td><td><a href="https://vms.ikejaelectric.com/accountCreation" class="lnk" target="_blank">VMS Portal ↗</a></td></tr>
+          <tr><td><b>EKEDC (Eko)</b></td><td>Lagos Güney</td><td>752K</td><td>customerservice@ekedp.com</td><td><a href="https://ekedp.com" class="lnk" target="_blank">ekedp.com ↗</a></td></tr>
+          <tr><td><b>IBEDC (İbadan)</b></td><td>Oyo, Ogun, Osun, Kwara</td><td>2.69M</td><td>procurement@ibedc.com</td><td><a href="https://ibedc.com" class="lnk" target="_blank">ibedc.com ↗</a></td></tr>
+          <tr><td><b>AEDC (Abuja)</b></td><td>FCT, Niger, Kogi, Nasarawa</td><td>1.29M</td><td>procurement@abujaelectricity.com</td><td><a href="https://abujaelectricity.com/supply-chain-management" class="lnk" target="_blank">SCM Portal ↗</a></td></tr>
+          <tr><td><b>BEDC (Benin)</b></td><td>Edo, Delta, Ondo, Ekiti</td><td>1.46M</td><td>info@bedcpower.com</td><td><a href="https://bedcpower.com" class="lnk" target="_blank">bedcpower.com ↗</a></td></tr>
+          <tr><td><b>EEDC (Enugu)</b></td><td>Abia, Anambra, Enugu, Ebonyi, Imo</td><td>1.39M</td><td>info@enugudisco.com</td><td><a href="https://enugudisco.com" class="lnk" target="_blank">enugudisco.com ↗</a></td></tr>
+          <tr><td><b>PHED (Port Harcourt)</b></td><td>Rivers, Akwa Ibom, Bayelsa, Cross River</td><td>1.17M</td><td>info@phed.com.ng</td><td><a href="https://phed.com.ng" class="lnk" target="_blank">phed.com.ng ↗</a></td></tr>
+          <tr><td><b>KEDCO (Kano)</b></td><td>Kano, Katsina, Jigawa</td><td>887K</td><td>info@kedco.com.ng</td><td><a href="https://kedco.com.ng" class="lnk" target="_blank">kedco.com.ng ↗</a></td></tr>
+          <tr><td><b>KAEDCO (Kaduna)</b></td><td>Kaduna</td><td>889K</td><td>procurement@kadunaelectric.com</td><td><a href="https://kadunaelectric.com" class="lnk" target="_blank">kadunaelectric.com ↗</a></td></tr>
+          <tr><td><b>JED (Jos)</b></td><td>Plateau, Bauchi, Benue, Gombe</td><td>857K</td><td>info@jedplc.com</td><td><a href="https://jedplc.com" class="lnk" target="_blank">jedplc.com ↗</a></td></tr>
+          <tr><td><b>YEDC (Yola)</b></td><td>Adamawa, Taraba, Borno, Yobe</td><td>824K</td><td>info@yedc.com.ng</td><td><a href="https://yedc.com.ng" class="lnk" target="_blank">yedc.com.ng ↗</a></td></tr>
+          <tr><td><b>Aba Power</b></td><td>Aba, Abia State</td><td>—</td><td>info@abapower.com.ng</td><td><a href="https://abapower.com.ng" class="lnk" target="_blank">abapower.com.ng ↗</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="irow">
+      <div class="icard">
+        <h3>📋 Kayıt İçin Belgeler</h3>
+        <div class="ii"><div class="dot"></div><p>Şirket tescil belgesi (Türkiye Ticaret Sicili)</p></div>
+        <div class="ii"><div class="dot"></div><p>ISO 9001 kalite belgesi</p></div>
+        <div class="ii"><div class="dot"></div><p>IEC 62271 / IEC 60076 sertifikaları</p></div>
+        <div class="ii"><div class="dot"></div><p>Banka referans mektubu</p></div>
+        <div class="ii"><div class="dot"></div><p>Nijerya'da yerel acente/distribütör</p></div>
+        <div class="ii"><div class="dot"></div><p>DUNS numarası (Ikeja için zorunlu)</p></div>
+      </div>
+      <div class="icard">
+        <h3>🎯 Öncelik Sırası</h3>
+        <div class="ii"><div class="dot" style="background:#e74c3c"></div><p><b>1. Ikeja Electric</b> — VMS sistemi var, en kolay</p></div>
+        <div class="ii"><div class="dot" style="background:#e74c3c"></div><p><b>2. AEDC</b> — SCM portalı var, Abuja merkez</p></div>
+        <div class="ii"><div class="dot" style="background:#f0b429"></div><p><b>3. IBEDC</b> — en fazla müşteri (2.69M)</p></div>
+        <div class="ii"><div class="dot" style="background:#f0b429"></div><p><b>4. PHED</b> — petrol-gaz bölgesi, yüksek bütçe</p></div>
+        <div class="ii"><div class="dot" style="background:#27ae60"></div><p><b>5. EKEDC</b> — Lagos Güney, yoğun sanayi</p></div>
+      </div>
+      <div class="icard">
+        <h3>⚡ TCN Ana Bağlantı</h3>
+        <div class="ii"><div class="dot" style="background:#e74c3c"></div><p>Web: <a href="https://tcn.org.ng" class="lnk" target="_blank">tcn.org.ng ↗</a></p></div>
+        <div class="ii"><div class="dot" style="background:#f0b429"></div><p>İhaleler → Tenders bölümünde yayınlanıyor</p></div>
+        <div class="ii"><div class="dot" style="background:#f0b429"></div><p>WB, AfDB, AFD, JICA projelerini yürütüyor</p></div>
+        <div class="ii"><div class="dot" style="background:#27ae60"></div><p>135 aktif proje — sürekli ekipman alımı var</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAYFA 6 — LEAD LİSTESİ -->
+  <div class="page" id="page-leads">
+    <div class="sec">Filtrelenebilir Lead Listesi</div>
+    <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
+      <select id="fType" onchange="renderLeads()">
+        <option value="">Tüm Tipler</option>
+        <option value="DisCo">DisCo</option>
+        <option value="EPC">EPC Müteahhit</option>
+        <option value="Kamu">Kamu Kurumu</option>
+        <option value="Tedarikçi">Tedarikçi</option>
+        <option value="Sanayi">Sanayi</option>
+      </select>
+      <select id="fCity" onchange="renderLeads()">
+        <option value="">Tüm Şehirler</option>
+        <option value="Lagos">Lagos</option>
+        <option value="Abuja">Abuja</option>
+        <option value="Port Harcourt">Port Harcourt</option>
+        <option value="İbadan">İbadan</option>
+        <option value="Kano">Kano</option>
+      </select>
+      <select id="fPri" onchange="renderLeads()">
+        <option value="0">Tüm Öncelikler</option>
+        <option value="5">★★★★★ Sadece</option>
+        <option value="4">★★★★ ve üstü</option>
+      </select>
+      <span id="lCount" style="font-size:12px;color:#7a9bb5;"></span>
+    </div>
+    <div class="tcard">
+      <div class="src">📌 Kaynak: NERC lisans listesi, TCN açıklamaları, WB proje belgeleri, DisCo web siteleri — Mart 2025</div>
+      <table>
+        <thead><tr><th>Kurum / Firma</th><th>Tip</th><th>Şehir</th><th>E-posta</th><th>Web</th><th>Öncelik</th></tr></thead>
+        <tbody id="leadsT"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const TITLES = {
+  overview:'Genel Bakış — Nijerya Pazar İstihbarat Paneli',
+  trade:'Ticaret Verileri — UN Comtrade & Volza Gerçek Verisi',
+  projects:'Aktif Projeler — World Bank & Uluslararası Fonlar',
+  tenders:'İhale Takibi — Canlı İhale Kaynakları',
+  disco:'DisCo Rehberi — 12 Dağıtım Şirketi',
+  leads:'Lead Listesi — 30+ Hedef Firma'
+};
+function showPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  el.classList.add('active');
+  document.getElementById('ptitle').textContent=TITLES[id];
+}
+
+new Chart(document.getElementById('cImport'),{type:'doughnut',data:{labels:['8504 Transformatör ($391M)','8502 Jeneratör ($315M)','8537 Pano ($162M)','8528 Ekran ($229M)','Diğer HS85'],datasets:[{data:[391,315,162,229,2003],backgroundColor:['#e74c3c','#2980b9','#f0b429','#27ae60','#4a6d8c'],borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#aac8e0',font:{size:11},padding:10}}}}});
+
+new Chart(document.getElementById('cCountry'),{type:'doughnut',data:{labels:['Çin (%51)','Almanya (%12)','Türkiye (%12)','Diğer (%25)'],datasets:[{data:[51,12,12,25],backgroundColor:['#e74c3c','#2980b9','#f0b429','#4a6d8c'],borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#aac8e0',font:{size:11},padding:10}}}}});
+
+new Chart(document.getElementById('cGrowth'),{type:'bar',data:{labels:['2022 Öncesi','2023-2024 (TTM)'],datasets:[{label:'Güç Trafosu Şipman (Nigeria)',data:[51,200],backgroundColor:['#2980b9','#e74c3c'],borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.y} shipment`}}},scales:{x:{grid:{color:'#1a2d40'},ticks:{color:'#7a9bb5'}},y:{grid:{color:'#1a2d40'},ticks:{color:'#7a9bb5'}}}}});
+
+new Chart(document.getElementById('cGrowthBar'),{type:'bar',data:{labels:['HS8504\nTrafo','HS8537\nPano','Güç Trafosu\n(Özel)','Rektifayr\nTrafosu'],datasets:[{label:'Yıllık Büyüme %',data:[18,12,292,2366],backgroundColor:['#2980b9','#27ae60','#e74c3c','#f0b429'],borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#1a2d40'},ticks:{color:'#7a9bb5',font:{size:10}}},y:{grid:{color:'#1a2d40'},ticks:{color:'#7a9bb5'}}}}});
+
+// DEĞİŞİKLİK BURADA: 'const' yerine 'let' yaptık ki robot yeni veri ekleyebilsin
+let LEADS=[
+  {n:'TCN (Transmission Company of Nigeria)',t:'Kamu',c:'Abuja',e:'info@tcn.org.ng',w:'tcn.org.ng',p:5},
+  {n:'Niger Delta Power Holding (NDPHC)',t:'Kamu',c:'Abuja',e:'info@ndphc.gov.ng',w:'ndphc.gov.ng',p:5},
+  {n:'Rural Electrification Agency (REA)',t:'Kamu',c:'Abuja',e:'info@rea.gov.ng',w:'rea.gov.ng',p:5},
+  {n:'Ikeja Electric (IE)',t:'DisCo',c:'Lagos',e:'info@ikejaelectric.com',w:'ikejaelectric.com',p:5},
+  {n:'Eko Electricity Distribution (EKEDC)',t:'DisCo',c:'Lagos',e:'customerservice@ekedp.com',w:'ekedp.com',p:5},
+  {n:'Ibadan Electricity Distribution (IBEDC)',t:'DisCo',c:'İbadan',e:'procurement@ibedc.com',w:'ibedc.com',p:5},
+  {n:'AEDC (Abuja Electricity)',t:'DisCo',c:'Abuja',e:'procurement@abujaelectricity.com',w:'abujaelectricity.com',p:5},
+  {n:'Elektrint Nigeria Ltd',t:'EPC',c:'Lagos',e:'info@elektrint.com',w:'elektrint.com',p:5},
+  {n:'ETCO Nigeria Ltd',t:'EPC',c:'Lagos',e:'etco_office@etco-nigeria.com',w:'etco-nigeria.com',p:5},
+  {n:'Fairtex Integrated Services',t:'EPC',c:'Port Harcourt',e:'info@fairtexgroups.com',w:'fairtex.com.ng',p:5},
+  {n:'BEDC (Benin Electricity)',t:'DisCo',c:'Benin City',e:'info@bedcpower.com',w:'bedcpower.com',p:4},
+  {n:'EEDC (Enugu Electricity)',t:'DisCo',c:'Enugu',e:'info@enugudisco.com',w:'enugudisco.com',p:4},
+  {n:'PHED (Port Harcourt Electricity)',t:'DisCo',c:'Port Harcourt',e:'info@phed.com.ng',w:'phed.com.ng',p:4},
+  {n:'KEDCO (Kano Electricity)',t:'DisCo',c:'Kano',e:'info@kedco.com.ng',w:'kedco.com.ng',p:4},
+  {n:'KAEDCO (Kaduna Electric)',t:'DisCo',c:'Kano',e:'procurement@kadunaelectric.com',w:'kadunaelectric.com',p:4},
+  {n:'Tranos Contracting Ltd',t:'EPC',c:'Lagos',e:'sales@tranos.ng',w:'tranos.ng',p:4},
+  {n:'Julius Berger Nigeria',t:'EPC',c:'Abuja',e:'info@julius-berger.com',w:'julius-berger.com',p:4},
+  {n:'AENS Projects & Engineering',t:'EPC',c:'Port Harcourt',e:'projects@aens-engineering.com',w:'aens-engineering.com',p:4},
+  {n:'GZ Industrial Supplies Nigeria',t:'Tedarikçi',c:'Lagos',e:'info@gz-ind.com',w:'gz-supplies.com',p:4},
+  {n:'Fembosco Limited',t:'Tedarikçi',c:'Lagos',e:'info@fembosco.com',w:'fembosco.com',p:4},
+  {n:'Dangote Group',t:'Sanayi',c:'Lagos',e:'info@dangote.com',w:'dangote.com',p:4},
+  {n:'NBET (Nigerian Bulk Electricity)',t:'Kamu',c:'Abuja',e:'info@nbet.gov.ng',w:'nbet.gov.ng',p:4},
+  {n:'JED (Jos Electricity)',t:'DisCo',c:'Jos',e:'info@jedplc.com',w:'jedplc.com',p:3},
+  {n:'YEDC (Yola Electricity)',t:'DisCo',c:'Yola',e:'info@yedc.com.ng',w:'yedc.com.ng',p:3},
+  {n:'Aba Power',t:'DisCo',c:'Aba',e:'info@abapower.com.ng',w:'abapower.com.ng',p:3},
+  {n:'Tikweld Products',t:'Tedarikçi',c:'Lagos',e:'sales@tikweld.com',w:'tikweld.com',p:3},
+  {n:'Lambert Electromec',t:'EPC',c:'Lagos',e:'info@lambertelectromec.com',w:'lambertelectromec.com',p:3},
+  {n:'Shell Nigeria (SPDC)',t:'Sanayi',c:'Port Harcourt',e:'spdc@shell.com',w:'shell.com.ng',p:4},
+  {n:'Exxon Mobil Nigeria',t:'Sanayi',c:'Lagos',e:'—',w:'exxonmobil.com',p:3},
+  {n:'Dangote Cement',t:'Sanayi',c:'Lagos',e:'info@dangote.com',w:'dangote.com',p:4},
+];
+const TC={DisCo:'bp-blue',EPC:'bp-purple',Kamu:'bp-red',Tedarikçi:'bp-green',Sanayi:'bp-gold'};
+
+function renderLeads(){
+  const t=document.getElementById('fType').value;
+  const c=document.getElementById('fCity').value;
+  const p=parseInt(document.getElementById('fPri').value)||0;
+  const f=LEADS.filter(l=>(!t||l.t===t)&&(!c||l.c===c)&&l.p>=p);
+  document.getElementById('lCount').textContent=f.length+' lead gösteriliyor';
+  document.getElementById('leadsT').innerHTML=f.map(l=>`
+    <tr>
+      <td>${l.n}</td>
+      <td><span class="bp ${TC[l.t]||'bp-blue'}">${l.t}</span></td>
+      <td>📍 ${l.c}</td>
+      <td><a href="mailto:${l.e}" class="lnk">${l.e}</a></td>
+      <td><a href="https://${l.w}" class="lnk" target="_blank">${l.w} ↗</a></td>
+      <td class="star">${'★'.repeat(l.p)}${'☆'.repeat(5-l.p)}</td>
+    </tr>`).join('');
+}
+
+// YENİ EKLEDİĞİMİZ ROBOT KONTROL PARÇASI BURASI
+async function checkUpdates() {
+  try {
+    const response = await fetch('data.json'); // Ajanın yazdığı dosyaya bak
+    if (response.ok) {
+      const liveData = await response.json();
+      // Robotun bulduğu yeni tarihi yaz
+      document.getElementById('update-date').innerText = "Güncelleme: " + liveData.last_update;
+      // Robot yeni proje bulduysa listeye ekle
+      if(liveData.projects && liveData.projects.length > 0) {
+          LEADS = [...liveData.projects, ...LEADS];
+      }
+    }
+  } catch (e) {
+    console.log("Canlı veri henüz hazır değil.");
+  }
+  renderLeads(); // Listeyi son haliyle çiz
+}
+
+// Sayfa açılır açılmaz çalıştır
+checkUpdates();
+
+</script>
+</body>
+</html>
