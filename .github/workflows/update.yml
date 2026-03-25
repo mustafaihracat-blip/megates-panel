@@ -8,10 +8,10 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  run-robot:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Kodlari indir
         uses: actions/checkout@v4
       
       - name: Python Kur
@@ -19,14 +19,15 @@ jobs:
         with:
           python-version: '3.10'
           
-      - name: Kütüphaneleri Yükle
+      - name: Kutupaneleri Yukle
         run: pip install requests
         
-      - name: Robotu Çalıştır
+      - name: Robotu Calistir
         run: python agent.py
         
-      - name: Verileri Kaydet
+      - name: Verileri Kaydet ve Cakismalari Coz
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Robot: Veriler Guncellendi"
+          commit_message: "Robot: Guncel Nijerya Verileri"
           file_pattern: 'data.json'
+          branch: main # Eger branch adin main degilse burayi master yap
