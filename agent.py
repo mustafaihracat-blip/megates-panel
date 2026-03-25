@@ -1,4 +1,4 @@
- import requests
+import requests
 import json
 from datetime import datetime
 
@@ -16,22 +16,20 @@ def update_agent_data():
     leads = regional_scout()
     try:
         wb_url = "https://search.worldbank.org/api/v2/projects?format=json&fl=id,project_name,totalamt,status&countrycode_exact=NG&sectortype_exact=Energy"
-        response = requests.get(wb_url, timeout=15)
-        if response.status_code == 200:
-            wb_res = response.json()
-            if 'projects' in wb_res:
-                for p_id in list(wb_res['projects'].keys())[:5]:
-                    proj = wb_res['projects'][p_id]
-                    leads.append({
-                        "n": "YENİ İHALE: " + proj.get('project_name', 'Proje'),
-                        "t": "Kamu/WB", "c": "Abuja", "e": "projects@worldbank.org", "w": f"projects.worldbank.org/{p_id}", "p": 5
-                    })
-    except:
-        pass
+        res = requests.get(wb_url, timeout=10)
+        if res.status_code == 200:
+            data = res.json()
+            for p_id in list(data.get('projects', {}).keys())[:5]:
+                p = data['projects'][p_id]
+                leads.append({
+                    "n": "IHALE: " + p.get('project_name', 'Enerji Projesi'),
+                    "t": "Kamu/WB", "c": "Abuja", "e": "projects@worldbank.org", "w": f"projects.worldbank.org/{p_id}", "p": 5
+                })
+    except: pass
     
-    data = {"last_update": datetime.now().strftime("%d.%m.%Y %H:%M"), "projects": leads}
+    output = {"last_update": datetime.now().strftime("%d.%m.%Y %H:%M"), "projects": leads}
     with open('data.json', 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+        json.dump(output, f, ensure_ascii=False, indent=2)
 
 if __name__ == "__main__":
     update_agent_data()
