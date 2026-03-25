@@ -9,10 +9,12 @@ jobs:
   run-robot:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Dosyayı yazmak için tam yetki veriyoruz
+      contents: write
     steps:
       - name: Kodları indir
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Tüm geçmişi al ki çakışma olmasın
 
       - name: Python Kur
         uses: actions/setup-python@v4
@@ -25,8 +27,12 @@ jobs:
       - name: Robotu Çalıştır
         run: python agent.py
 
-      - name: Otomatik Kaydet ve Gönder
-        uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: "Robot: Nijerya verileri güncellendi"
-          file_pattern: 'data.json' # Sadece bu dosyayı günceller
+      - name: Veriyi Zorla Kaydet (Force Update)
+        run: |
+          git config --global user.name 'Market-Robot'
+          git config --global user.email 'robot@github.com'
+          git add data.json
+          # Eğer değişiklik yoksa hata vermeden geç:
+          git commit -m "Robot: Yeni veriler eklendi" || exit 0
+          # Çakışmaları görmezden gel ve zorla gönder (Force Push):
+          git push origin main --force
